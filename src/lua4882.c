@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 MIT License
 
-luadaqmx - Copyright (c) 2024 Kritzel Kratzel.
+lua4882 - Copyright (c) 2024 Kritzel Kratzel.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in 
@@ -50,7 +50,8 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 
 #ifdef _WINDLL
 
-static const char* decodeErrorCode(int err) {
+//------------------------------------------------------------------------------
+static const char* errorMnemonic(int err) {
   // Error messages corresponding to global variable iberr
   const char *msg;
   switch(err) {
@@ -127,8 +128,62 @@ static const char* decodeErrorCode(int err) {
   return msg;
 }
 
+//------------------------------------------------------------------------------
+static void pushIbsta(lua_State *L, unsigned int status){
+  // Pushes content of Ibsta on stack (as table) as return value
+  
+  const char bitMnemonic[16][5] = {"DCAS","DTAS","LACS","TACS",
+				   "ATN", "CIC", "REM", "LOK",
+				   "CMPL","",    "",    "RQS",
+				   "SRQI","END", "TIMO","ERR"};
+  // build table
+  lua_newtable(L);
+  int top = lua_gettop(L);
+
+  // push index/value-pairs on stack
+  for (int i=0; i<16; i++) {
+    // skip unused bits
+    if (strcmp(bitMnemonic[i],"") == 0) continue;
+    // push index
+    lua_pushstring(L,bitMnemonic[i]);
+    // push value
+    lua_pushboolean(L,(status & (1 << i)) >> i);
+    // assign table[index] = value
+    lua_settable(L,top); // also pops processed index/value from stack
+  }
+}
+
+//------------------------------------------------------------------------------
+static unsigned int lua4882_ibclr(lua_State *L){
+  // Clear a specific device.
+  // unsigned int ibclr (int ud)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 1) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  // call C-function
+  unsigned int status = ibclr(descr);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    pushIbsta(L,status);
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    pushIbsta(L,status);
+    lua_pushnil(L);				// no errmsg
+  }
+  return 2;
+}
+
+//------------------------------------------------------------------------------
 static int lua4882_ibdev(lua_State *L) {
-  // Open and initialize a device descriptor
+  // Open and initialize a device descriptor.
   // int ibdev (int BdIndx, int pad, int sad, int tmo, int eot, int eos)
 
   // Check number of arguments
@@ -137,19 +192,19 @@ static int lua4882_ibdev(lua_State *L) {
     return luaL_error(L,"Wrong number of arguments.");
   }
   // Check arguments
-  int idx = (int)luaL_checkinteger(L,1);
-  int pad = (int)luaL_checkinteger(L,2);
-  int sad = (int)luaL_checkinteger(L,3);
-  int tmo = (int)luaL_checkinteger(L,4);
-  int eot = (int)luaL_checkinteger(L,5);
-  int eos = (int)luaL_checkinteger(L,6);
+  int descr = (int)luaL_checkinteger(L,1);
+  int pad   = (int)luaL_checkinteger(L,2);
+  int sad   = (int)luaL_checkinteger(L,3);
+  int tmo   = (int)luaL_checkinteger(L,4);
+  int eot   = (int)luaL_checkinteger(L,5);
+  int eos   = (int)luaL_checkinteger(L,6);
   // call C-function
-  int handle = ibdev(idx, pad, sad, tmo, eot, eos);
+  int handle = ibdev(descr, pad, sad, tmo, eot, eos);
   // Error handling
   if (Ibsta() & ERR) {
     // failed
     lua_pushnil(L);		// no handle or descriptor
-    lua_pushstring(L,decodeErrorCode(Iberr())); // errmsg
+    lua_pushstring(L,errorMnemonic(Iberr())); // errmsg
   }
   else {
     // OK
@@ -163,12 +218,15 @@ static int lua4882_ibdev(lua_State *L) {
 // FIXME - non-_WINDLL not yet implemented
 #endif
 
+//------------------------------------------------------------------------------
 static const struct luaL_Reg lua4882_metamethods [] = {
+  {"__call", lua4882_ibclr},
   {"__call", lua4882_ibdev},
   {NULL, NULL}
 };
 
 static const struct luaL_Reg lua4882_funcs [] = {
+  {"ibclr", lua4882_ibclr},
   {"ibdev", lua4882_ibdev},
   {NULL, NULL}
 };
@@ -181,5 +239,4 @@ DLL int luaopen_lua4882(lua_State *L){
   lua_setfield(L,-2,"_VERSION");
   return 1;
 }
-
-
+//------------------------------------------------------------------------------

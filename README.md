@@ -1,7 +1,49 @@
 # lua4882
 Access to NI's NI-488.2 (GPIB) driver
 
-## Usage
+## API
+
+The following commands (mostly traditional NI-488.2 calls) are implemented:
+
+### ibclr()
+
+Purpose: Clear a specific device.
+
+```lua
+local gpib = require "lua4882"
+
+-- Returns content of IBSTA as table and an error message
+local stat, errmsg = gpib.ibclr(3)	-- clears device 3
+
+-- On success:
+stat = <STATUS_TABLE>	-- see below
+errmsg = nil
+-- On failure:
+handle = <STATUS_TABLE>	-- see below
+errmsg = "Error code and detailed description"
+
+-- Example with no GPIO-adapter attached, therefore ERR = true and errmsg != nil
+for i,v in pairs(stat) do print(i,v) end
+RQS     false
+LACS    false
+END     false
+CMPL    false
+TIMO    false
+ERR     true
+DTAS    false
+TACS    false
+LOK     false
+REM     false
+CIC     false
+SRQI    false
+DCAS    false
+ATN     false
+
+print(errmsg)
+EHDL: The input handle is invalid
+```
+
+For the meaning of the status bits see https://documentation.help/NI-488.2/gpib2o8j.html.
 
 ### ibdev()
 
@@ -12,43 +54,34 @@ local gpib = require "lua4882"
 local boardIndex = 0	-- Commonly used index of bus controller
 local primaryAddr = 1	-- Primary GPIB address of remote device
 local secondaryAddr = 0	-- No secondary GPIB address of remote device
-local timeout = 11		-- Timeout as integer from 0 to 17
-						--  0: Infinite timeout (disabled)
-						--  1: Timeout of 10 us (ideal)
-						--  2: Timeout of 30 us (ideal)
-						--  3: Timeout of 100 us (ideal)
-						--  4: Timeout of 300 us (ideal)
-						--  5: Timeout of 1 ms (ideal)
-						--  6: Timeout of 3 ms (ideal)
-						--  7: Timeout of 10 ms (ideal)
-						--  8: Timeout of 30 ms (ideal)
-						--  9: Timeout of 100 ms (ideal)
-						-- 10: Timeout of 300 ms (ideal)
-						-- 11: Timeout of 1 s (ideal)
-						-- 12: Timeout of 3 s (ideal)
-						-- 13: Timeout of 10 s (ideal)
-						-- 14: Timeout of 30 s (ideal)
-						-- 15: Timeout of 100 s (ideal)
-						-- 16: Timeout of 300 s (ideal)
-						-- 17: Timeout of 1000 s (ideal)
+local timeout = 11		-- Timeout 1 s (see table below)
 local eoiMode = 1		-- Asserts GPIB End-or-Identify (EOI) line at end of transfer
 local eosMode = 0		-- No end-of-string character
 
+-- Returns device handle and error message
 local handle, errmsg = gpib.ibdev(boardIndex, primaryAddr, secondaryAddr, timeout, eoiMode, eosMode)
 
--- on success:
+-- On success:
 handle = <DEVICE_HANDLE>
 errmsg = nil
--- on failure:
+-- On failure:
 handle = nil
 errmsg = "Error code and detailed description"
 
--- Example (without an GPIB-card installed)
+-- Interactive example (without an GPIB adapter installed)
 Lua 5.4.7  Copyright (C) 1994-2024 Lua.org, PUC-Rio
 > gpib=require "lua4882"
 > gpib.ibdev(0,3,0,3,1,0)
 nil     ENEB: Non-existent interface board
 ```
 
+The following timeout index values may be used.
 
+| Index   | 0    | 1     | 2     | 3      | 4      | 5    | 6    | 7     | 8     |
+| ------- | ---- | ----- | ----- | ------ | ------ | ---- | ---- | ----- | ----- |
+| Timeout | none | 10 µs | 30 µs | 100 µs | 300 µs | 1 ms | 3 ms | 10 ms | 30 ms |
+
+| Index   | 9      | 10     | 11   | 12   | 13   | 14   | 15    | 16    | 17     |
+| ------- | ------ | ------ | ---- | ---- | ---- | ---- | ----- | ----- | ------ |
+| Timeout | 100 ms | 300 ms | 1 s  | 3 s  | 10 s | 30 s | 100 s | 300 s | 1000 s |
 
