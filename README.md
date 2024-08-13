@@ -92,7 +92,7 @@ Purpose: Read data from a device into a user buffer. Data may be read as ASCII-s
 ```lua
 local gpib = require "lua4882"
 
--- Example 1: read 16 bytes from device 3 as ASCII and returns result as string
+-- Example 1: read 16 bytes from device 3 as contiguous string
 local data, stat, errmsg = gpib.ibrd(3,16)
 -- On success:
 data = "<SOME_ASCII_STRING>"
