@@ -46,6 +46,9 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 
 #define TRUE 1
 #define FALSE 0
+#define ASCIISTRING 0
+#define CHARTABLE   1
+#define BINTABLE    2
 #define LUA4882_VERSION "lua4882 v0.1"
 
 #ifdef _WINDLL
@@ -219,15 +222,106 @@ static int lua4882_ibdev(lua_State *L) {
 #endif
 
 //------------------------------------------------------------------------------
+static int lua4882_ibrd(lua_State *L) {
+  // Read data from a device into a user buffer. Operation terminates normally
+  // when count bytes have been received or END is received.
+  // unsigned int ibrd (int ud, void *rdbuf, size_t count)
+  //
+  // Additional option for configuring read data to Lua:
+  // No option   : Return data as normal ASCII-string
+  // "charTable" : Return data as separate ASCII-chars in table with 1-based
+  //               indexing. str="ABc" -> t[1]="A" t[2]="B" t[3]="c"
+  // "binTable"  : Return data as separate binary numbers in table with 1-based
+  //               indexing. str="ABc" -> t[1]=0x41 t[2]=0x42 t[3]=0x63
+
+  // Check arguments
+  int descr, output;
+  size_t count;
+  const char *txtOption = '\0';
+  if (lua_gettop(L) == 2) {
+    // Two arguments, output as normal ASCII-string.
+    descr = (int)luaL_checkinteger(L,1);
+    count = (size_t)luaL_checkinteger(L,2);
+    output = ASCIISTRING;
+  }
+  else if (lua_gettop(L) == 3) {
+    // Three arguments, output dependent on given option
+    descr = (int)luaL_checkinteger(L,1);
+    count = (size_t)luaL_checkinteger(L,2);
+    txtOption = luaL_checkstring(L,3);
+    if (strcmp(txtOption,"charTable") == 0) {
+      output = CHARTABLE;
+    }
+    else if (strcmp(txtOption,"binTable") == 0) {
+      output = BINTABLE;
+    }
+    else {
+      return luaL_error(L,"3rd argument must be either \"charTable\" or \"binTable\".");
+    }
+  } else {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Preparations
+  char *rdBuf = malloc(count*sizeof(char));
+  // Call C-function
+  unsigned int status = ibrd(descr, rdBuf, count);	// Actual number of bytes
+  						     	// transferred is returned
+  							// in Ibcnt(), see below.
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    lua_pushnil(L);				// no received data
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    if (output == CHARTABLE || output == BINTABLE) {
+      // output data as table
+      lua_newtable(L);
+      int top = lua_gettop(L);
+      // push index/value-pairs on stack
+      for (int i = 0; i < min(Ibcnt(),count); i++) {
+	// push index
+	lua_pushinteger(L,i+1); 		// Lua 1-based indexing
+	// push value...
+	if (output == BINTABLE) {
+	  // ...as binary data table element
+	  lua_pushinteger(L,(lua_Integer)rdBuf[i]);
+	}
+	else {
+	  // ...as ASCII data table element
+	  lua_pushlstring(L,&(rdBuf[i]),1);
+	}
+      }
+      // assign table[index] = value
+      lua_settable(L,top); // also pops processed index/value from stack
+    }
+    else {
+      // output data as string
+      lua_pushlstring(L,rdBuf,min(Ibcnt(),count));// push data as string
+    }
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  // Cleanup
+  free(rdBuf);
+  return 3;
+}
+
+//------------------------------------------------------------------------------
 static const struct luaL_Reg lua4882_metamethods [] = {
   {"__call", lua4882_ibclr},
   {"__call", lua4882_ibdev},
+  {"__call", lua4882_ibrd},
   {NULL, NULL}
 };
 
 static const struct luaL_Reg lua4882_funcs [] = {
   {"ibclr", lua4882_ibclr},
   {"ibdev", lua4882_ibdev},
+  {"ibrd",  lua4882_ibrd},
   {NULL, NULL}
 };
 

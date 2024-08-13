@@ -85,3 +85,48 @@ The following timeout index values may be used.
 | ------- | ------ | ------ | ---- | ---- | ---- | ---- | ----- | ----- | ------ |
 | Timeout | 100 ms | 300 ms | 1 s  | 3 s  | 10 s | 30 s | 100 s | 300 s | 1000 s |
 
+### ibrd()
+
+Purpose: Read data from a device into a user buffer. Data may be read as ASCII-string, as table of single ASCII-characters, or as table of raw binary data.
+
+```lua
+local gpib = require "lua4882"
+
+-- Example 1: read 16 bytes from device 3 as ASCII and returns result as string
+local data, stat, errmsg = gpib.ibrd(3,16)
+-- On success:
+data = "<SOME_ASCII_STRING>"
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil	-- no error message
+-- On failure:
+data = nil
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+
+
+-- Example 2: read 12 bytes from device 4 as table of ASCII-characters
+--            devData = "ABc" : data[1]="A" data[2]="B" data[3]="c"
+local data, stat, errmsg = gpib.ibrd(4,12,"charTable")
+-- On success:
+data = <TABLE_OF_CHARACTERS>	-- with Lua 1-based indexing
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil	-- no error message
+-- On failure:
+data = nil
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+
+
+-- Example 3: read 8 bytes from device 5 as table of numbers (raw data)
+--            devData = "ABc" : data[1]=0x41 data[2]=0x42 data[3]=0x63
+local data, stat, errmsg = gpib.ibrd(5,8,"binTable")
+-- On success:
+data = <TABLE_OF_NUMBERS>	-- with Lua 1-based indexing
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil	-- no error message
+-- On failure:
+data = nil
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+```
+
