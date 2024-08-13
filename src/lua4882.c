@@ -217,10 +217,6 @@ static int lua4882_ibdev(lua_State *L) {
   return 2;
 }
 
-#else
-// FIXME - non-_WINDLL not yet implemented
-#endif
-
 //------------------------------------------------------------------------------
 static int lua4882_ibrd(lua_State *L) {
   // Read data from a device into a user buffer. Operation terminates normally
@@ -256,7 +252,7 @@ static int lua4882_ibrd(lua_State *L) {
       output = BINTABLE;
     }
     else {
-      return luaL_error(L,"3rd argument must be either \"charTable\" or \"binTable\".");
+      return luaL_error(L,"Optional 3rd argument must be either \"charTable\" or \"binTable\".");
     }
   } else {
     // bailing out
@@ -311,10 +307,46 @@ static int lua4882_ibrd(lua_State *L) {
 }
 
 //------------------------------------------------------------------------------
+static int lua4882_ibwrt(lua_State *L) {
+  // Write data to a device from a user buffer.
+  // unsigned int ibwrt (int ud, const void *wrtbuf, size_t count)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 2) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  const char *txData = luaL_checkstring(L,2);
+  // call C-function
+  unsigned int status = ibwrt(descr,txData,strlen(txData));
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    lua_pushnil(L);				// no number of bytes sent
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    lua_pushinteger(L,(lua_Integer)Ibcnt());	// Number of bytes sent
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 3;
+}
+
+#else
+// FIXME - non-_WINDLL not yet implemented
+#endif
+
+//------------------------------------------------------------------------------
 static const struct luaL_Reg lua4882_metamethods [] = {
   {"__call", lua4882_ibclr},
   {"__call", lua4882_ibdev},
   {"__call", lua4882_ibrd},
+  {"__call", lua4882_ibwrt},
   {NULL, NULL}
 };
 
@@ -322,6 +354,7 @@ static const struct luaL_Reg lua4882_funcs [] = {
   {"ibclr", lua4882_ibclr},
   {"ibdev", lua4882_ibdev},
   {"ibrd",  lua4882_ibrd},
+  {"ibwrt", lua4882_ibwrt},
   {NULL, NULL}
 };
 

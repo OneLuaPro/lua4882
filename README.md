@@ -87,7 +87,9 @@ The following timeout index values may be used.
 
 ### ibrd()
 
-Purpose: Read data from a device into a user buffer. Data may be read as ASCII-string, as table of single ASCII-characters, or as table of raw binary data.
+Purpose: Read data from a device into a user buffer. 
+
+Data may be read as contiguous ASCII-string, as table of single ASCII-characters, or as table of raw binary data. Number of bytes read may be less than the actual specified value. This usually happens when the addressed device raises the `END` line during transmission, indicating that no more data is available for transmission.
 
 ```lua
 local gpib = require "lua4882"
@@ -126,6 +128,25 @@ stat = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = nil	-- no error message
 -- On failure:
 data = nil
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+```
+
+### ibwrt()
+
+Purpose: Write data to a device from a user buffer.
+
+```lua
+local gpib = require "lua4882"
+
+-- Write SCPI reset command to device 3
+local bytes, stat, errmsg = gpib.ibwrt(3,"*RST\n")	-- assumes \n message terminator
+-- On success:
+bytes = 5	-- 5 bytes written
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil	-- no error message
+-- On failure:
+bytes = nil
 handle = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = "Error code and detailed description"
 ```
