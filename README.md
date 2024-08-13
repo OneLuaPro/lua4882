@@ -85,6 +85,27 @@ The following timeout index values may be used.
 | ------- | ------ | ------ | ---- | ---- | ---- | ---- | ----- | ----- | ------ |
 | Timeout | 100 ms | 300 ms | 1 s  | 3 s  | 10 s | 30 s | 100 s | 300 s | 1000 s |
 
+### ibonl()
+
+Purpose: Place the device or interface online or offline.
+
+```lua
+local gpib = require "lua4882"
+
+-- Example 1: Enable device 3
+local stat, errmsg = gpib.ibonl(3,true)
+
+-- Example 2: Disable device 4
+local stat, errmsg = gpib.ibonl(4,false)
+
+-- On success:
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil
+-- On failure:
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+```
+
 ### ibrd()
 
 Purpose: Read data from a device into a user buffer. 

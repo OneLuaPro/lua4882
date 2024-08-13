@@ -173,12 +173,12 @@ static unsigned int lua4882_ibclr(lua_State *L){
   // Result and error handling
   if (Ibsta() & ERR) {
     // failed
-    pushIbsta(L,status);
+    pushIbsta(L,status);			// IBSTA table
     lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
   }
   else {
     // OK
-    pushIbsta(L,status);
+    pushIbsta(L,status);			// IBSTA table
     lua_pushnil(L);				// no errmsg
   }
   return 2;
@@ -217,6 +217,42 @@ static int lua4882_ibdev(lua_State *L) {
   return 2;
 }
 
+//------------------------------------------------------------------------------
+static int lua4882_ibonl(lua_State *L) {
+  // Place the device or interface online or offline.
+  // unsigned int ibonl (int ud, int v)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 2) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  // there is no luaL_checkboolean()
+  int state;
+  if (lua_isboolean(L,2)) {
+    state = lua_toboolean(L,2);
+  }
+  else {
+    return luaL_error(L,"2nd argument must be boolean.");
+  }
+  // Call C-function
+  unsigned int status = ibonl(descr,state);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 2;
+}
+  
 //------------------------------------------------------------------------------
 static int lua4882_ibrd(lua_State *L) {
   // Read data from a device into a user buffer. Operation terminates normally
@@ -345,6 +381,7 @@ static int lua4882_ibwrt(lua_State *L) {
 static const struct luaL_Reg lua4882_metamethods [] = {
   {"__call", lua4882_ibclr},
   {"__call", lua4882_ibdev},
+  {"__call", lua4882_ibonl},
   {"__call", lua4882_ibrd},
   {"__call", lua4882_ibwrt},
   {NULL, NULL}
@@ -353,6 +390,7 @@ static const struct luaL_Reg lua4882_metamethods [] = {
 static const struct luaL_Reg lua4882_funcs [] = {
   {"ibclr", lua4882_ibclr},
   {"ibdev", lua4882_ibdev},
+  {"ibonl", lua4882_ibonl},
   {"ibrd",  lua4882_ibrd},
   {"ibwrt", lua4882_ibwrt},
   {NULL, NULL}
