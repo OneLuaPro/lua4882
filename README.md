@@ -40,10 +40,42 @@ DCAS    false
 ATN     false
 
 print(errmsg)
-EHDL: The input handle is invalid
+EHDL:The input handle is invalid
 ```
 
 For the meaning of the status bits see https://documentation.help/NI-488.2/gpib2o8j.html.
+
+### ibconfig()
+
+Purpose: Change the software configuration input.
+
+List of option identifiers:
+
+```bash
+"IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL", "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar", "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime", "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv", "IbcLON", "IbcEOS"
+```
+
+The detailed documentation on these options is available at:
+
+- ibconfig Board Configuration Parameter Options: https://documentation.help/NI-488.2/func77jn.html
+- ibconfig Device Configuration Parameter Options: https://documentation.help/NI-488.2/func9vcj.html
+
+```lua
+local gpib = require "lua4882"
+
+-- Example 1: Disable Autopolling on controller interface 0
+local stat, errmsg = gpib.ibconfig(0,"IbcAUTOPOLL",0)
+
+-- Example 2: Change timeout on device 4 to 10s (see timeout table in ibdev() below)
+local stat, errmsg = gpib.ibconfig(4,"IbcTMO",13)
+
+-- On success:
+stat = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = nil	-- no error message
+-- On failure:
+handle = <STATUS_TABLE>	-- see description for ibclr()
+errmsg = "Error code and detailed description"
+```
 
 ### ibdev()
 
@@ -63,16 +95,16 @@ local handle, errmsg = gpib.ibdev(boardIndex, primaryAddr, secondaryAddr, timeou
 
 -- On success:
 handle = <DEVICE_HANDLE>
-errmsg = nil
+errmsg = nil	-- no error message
 -- On failure:
-handle = nil
+handle = nil	-- no device handle
 errmsg = "Error code and detailed description"
 
 -- Interactive example (without an GPIB adapter installed)
 Lua 5.4.7  Copyright (C) 1994-2024 Lua.org, PUC-Rio
 > gpib=require "lua4882"
 > gpib.ibdev(0,3,0,3,1,0)
-nil     ENEB: Non-existent interface board
+nil     ENEB:Non-existent interface board
 ```
 
 The following timeout index values may be used.
@@ -100,7 +132,7 @@ local stat, errmsg = gpib.ibonl(4,false)
 
 -- On success:
 stat = <STATUS_TABLE>	-- see description for ibclr()
-errmsg = nil
+errmsg = nil	-- no error message
 -- On failure:
 handle = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = "Error code and detailed description"
@@ -162,6 +194,7 @@ local gpib = require "lua4882"
 
 -- Write SCPI reset command to device 3
 local bytes, stat, errmsg = gpib.ibwrt(3,"*RST\n")	-- assumes \n message terminator
+
 -- On success:
 bytes = 5	-- 5 bytes written
 stat = <STATUS_TABLE>	-- see description for ibclr()
@@ -172,3 +205,6 @@ handle = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = "Error code and detailed description"
 ```
 
+## License
+
+See https://github.com/OneLuaPro/lua4882/blob/master/LICENSE.

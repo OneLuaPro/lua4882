@@ -24,8 +24,8 @@ SOFTWARE.
 
 --------------------------------------------------------------------------------
 
-National Instruments  NI-488.2 API
-Copyright (c) National Instruments 2001-2007. All Rights Reserved.     
+National Instruments NI-488.2 API
+Copyright (c) National Instruments 2001-2007. All Rights Reserved.
 https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 
 --------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define ASCIISTRING 0
 #define CHARTABLE   1
 #define BINTABLE    2
+#define NUM_OPTIONS_IBCONFIG	26
 #define LUA4882_VERSION "lua4882 v0.1"
 
 #ifdef _WINDLL
@@ -59,73 +60,73 @@ static const char* errorMnemonic(int err) {
   const char *msg;
   switch(err) {
   case EDVR:
-    msg = "EDVR: System error";
+    msg = "EDVR:System error";
     break;
   case ECIC:
-    msg = "ECIC: Function requires GPIB board to be CIC";
+    msg = "ECIC:Function requires GPIB board to be CIC";
     break;
   case ENOL:
-    msg = "ENOL: Write function detected no Listeners";
+    msg = "ENOL:Write function detected no Listeners";
     break;
   case EADR:
-    msg = "EADR: Interface board not addressed correctly";
+    msg = "EADR:Interface board not addressed correctly";
     break;
   case EARG:
-    msg = "EARG: Invalid argument to function call";
+    msg = "EARG:Invalid argument to function call";
     break;
   case ESAC:
-    msg = "ESAC: Function requires GPIB board to be SAC";
+    msg = "ESAC:Function requires GPIB board to be SAC";
     break;
   case EABO:
-    msg = "EABO: I/O operation aborted";
+    msg = "EABO:I/O operation aborted";
     break;
   case ENEB:
-    msg = "ENEB: Non-existent interface board";
+    msg = "ENEB:Non-existent interface board";
     break;
   case EDMA:
-    msg = "EDMA: Error performing DMA";
+    msg = "EDMA:Error performing DMA";
     break;
   case EOIP:
-    msg = "EOIP: I/O operation started before previous operation completed";
+    msg = "EOIP:I/O operation started before previous operation completed";
     break;
   case ECAP:
-    msg = "ECAP: No capability for intended operation";
+    msg = "ECAP:No capability for intended operation";
     break;
   case EFSO:
-    msg = "EFSO: File system operation error";
+    msg = "EFSO:File system operation error";
     break;
   case EBUS:
-    msg = "EBUS: Command error during device call";
+    msg = "EBUS:Command error during device call";
     break;
   case ESTB:
-    msg = "ESTB: Serial poll status byte lost";
+    msg = "ESTB:Serial poll status byte lost";
     break;
   case ESRQ:
-    msg = "ESRQ: SRQ remains asserted";
+    msg = "ESRQ:SRQ remains asserted";
     break;
   case ETAB:
-    msg = "ETAB: The return buffer is full";
+    msg = "ETAB:The return buffer is full";
     break;
   case ELCK:
-    msg = "ELCK: Address or board is locked";
+    msg = "ELCK:Address or board is locked";
     break;
   case EARM:
-    msg = "EARM: The ibnotify Callback failed to rearm";
+    msg = "EARM:The ibnotify Callback failed to rearm";
     break;
   case EHDL:
-    msg = "EHDL: The input handle is invalid";
+    msg = "EHDL:The input handle is invalid";
     break;
   case EWIP:
-    msg = "EWIP: Wait already in progress on input ud";
+    msg = "EWIP:Wait already in progress on input ud";
     break;
   case ERST:
-    msg = "ERST: The event notification was cancelled due to a reset of the interface";
+    msg = "ERST:The event notification was cancelled due to a reset of the interface";
     break;
   case EPWR:
-    msg = "EPWR: The system or board has lost power or gone to standby";
+    msg = "EPWR:The system or board has lost power or gone to standby";
     break;
   default:
-    msg = "E???: Undocumented error";
+    msg = "E???:Undocumented error code";
     break;
   }
   return msg;
@@ -157,6 +158,18 @@ static void pushIbsta(lua_State *L, unsigned int status){
 }
 
 //------------------------------------------------------------------------------
+static int luaL_checkboolean(lua_State *L, int idx){
+  // There is no luaL_checkboolean() in Lua. This is my lousy implementation.
+  // https://www.lua.org/manual/5.4/manual.html#lua_toboolean
+  if (lua_isboolean(L,idx)) {
+    return lua_toboolean(L,idx);	// returns 0 or 1
+  }
+  else {
+    return luaL_error(L,"bad argument in caller of luaL_checkboolean (boolean expected)");
+  }
+}
+
+//------------------------------------------------------------------------------
 static unsigned int lua4882_ibclr(lua_State *L){
   // Clear a specific device.
   // unsigned int ibclr (int ud)
@@ -168,8 +181,64 @@ static unsigned int lua4882_ibclr(lua_State *L){
   }
   // Check arguments
   int descr = (int)luaL_checkinteger(L,1);
-  // call C-function
+  // Call C-function
   unsigned int status = ibclr(descr);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 2;
+}
+
+//------------------------------------------------------------------------------
+static int lua4882_ibconfig(lua_State *L) {
+  // Change the software configuration input.
+  // unsigned int ibconfig (int ud, int option, int value)
+
+  // Data taken from ni4882.h
+  const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
+    "IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL",
+    "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar",
+    "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime",
+    "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv",
+    "IbcLON", "IbcEOS"};
+  const unsigned int optCode[NUM_OPTIONS_IBCONFIG] = {
+    IbcPAD, IbcSAD, IbcTMO, IbcEOT, IbcPPC, IbcREADDR, IbcAUTOPOLL,
+    IbcSC, IbcSRE, IbcEOSrd, IbcEOSwrt, IbcEOScmp, IbcEOSchar,
+    IbcPP2, IbcTIMING, IbcDMA, IbcSendLLO, IbcSPollTime, IbcPPollTime,
+    IbcEndBitIsNormal, IbcUnAddr, IbcHSCableLength, IbcIst, IbcRsv,
+    IbcLON, IbcEOS};
+
+  // Check number of arguments
+  if (lua_gettop(L) != 3) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  const char *givenOptName = luaL_checkstring(L,2);
+  int givenOptIdx = -1;	// init to impossible value
+  for (int i=0; i<NUM_OPTIONS_IBCONFIG; i++) {
+    if (strcmp(optMnemonic[i],givenOptName) == 0) {
+      // given option name is valid
+      givenOptIdx = i;
+      break;	// done here
+    }
+  }
+  if (givenOptIdx == -1) {
+    // Given option not found.
+    return luaL_error(L,"Unknown Ibconfig() option name.");
+  }
+  int optArg = luaL_checkinteger(L,3);
+  // Call C-function
+  unsigned int status = ibconfig(descr,optCode[givenOptIdx],optArg);
   // Result and error handling
   if (Ibsta() & ERR) {
     // failed
@@ -201,7 +270,7 @@ static int lua4882_ibdev(lua_State *L) {
   int tmo   = (int)luaL_checkinteger(L,4);
   int eot   = (int)luaL_checkinteger(L,5);
   int eos   = (int)luaL_checkinteger(L,6);
-  // call C-function
+  // Call C-function
   int handle = ibdev(descr, pad, sad, tmo, eot, eos);
   // Error handling
   if (Ibsta() & ERR) {
@@ -229,14 +298,7 @@ static int lua4882_ibonl(lua_State *L) {
   }
   // Check arguments
   int descr = (int)luaL_checkinteger(L,1);
-  // there is no luaL_checkboolean()
-  int state;
-  if (lua_isboolean(L,2)) {
-    state = lua_toboolean(L,2);
-  }
-  else {
-    return luaL_error(L,"2nd argument must be boolean.");
-  }
+  int state = luaL_checkboolean(L,2);
   // Call C-function
   unsigned int status = ibonl(descr,state);
   // Result and error handling
@@ -355,7 +417,7 @@ static int lua4882_ibwrt(lua_State *L) {
   // Check arguments
   int descr = (int)luaL_checkinteger(L,1);
   const char *txData = luaL_checkstring(L,2);
-  // call C-function
+  // Call C-function
   unsigned int status = ibwrt(descr,txData,strlen(txData));
   // Result and error handling
   if (Ibsta() & ERR) {
@@ -380,6 +442,7 @@ static int lua4882_ibwrt(lua_State *L) {
 //------------------------------------------------------------------------------
 static const struct luaL_Reg lua4882_metamethods [] = {
   {"__call", lua4882_ibclr},
+  {"__call", lua4882_ibconfig},
   {"__call", lua4882_ibdev},
   {"__call", lua4882_ibonl},
   {"__call", lua4882_ibrd},
@@ -388,11 +451,12 @@ static const struct luaL_Reg lua4882_metamethods [] = {
 };
 
 static const struct luaL_Reg lua4882_funcs [] = {
-  {"ibclr", lua4882_ibclr},
-  {"ibdev", lua4882_ibdev},
-  {"ibonl", lua4882_ibonl},
-  {"ibrd",  lua4882_ibrd},
-  {"ibwrt", lua4882_ibwrt},
+  {"ibclr",    lua4882_ibclr},
+  {"ibconfig", lua4882_ibconfig},
+  {"ibdev",    lua4882_ibdev},
+  {"ibonl",    lua4882_ibonl},
+  {"ibrd",     lua4882_ibrd},
+  {"ibwrt",    lua4882_ibwrt},
   {NULL, NULL}
 };
 
