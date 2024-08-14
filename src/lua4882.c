@@ -52,6 +52,21 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define NUM_OPTIONS_IBCONFIG	26
 #define LUA4882_VERSION "lua4882 v0.1"
 
+// Ibconfig() Ibask() options, taken from ni4882.h
+const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
+  "IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL",
+  "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar",
+  "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime",
+  "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv",
+  "IbcLON", "IbcEOS"};
+
+const unsigned int optCode[NUM_OPTIONS_IBCONFIG] = {
+  IbcPAD, IbcSAD, IbcTMO, IbcEOT, IbcPPC, IbcREADDR, IbcAUTOPOLL,
+  IbcSC, IbcSRE, IbcEOSrd, IbcEOSwrt, IbcEOScmp, IbcEOSchar,
+  IbcPP2, IbcTIMING, IbcDMA, IbcSendLLO, IbcSPollTime, IbcPPollTime,
+  IbcEndBitIsNormal, IbcUnAddr, IbcHSCableLength, IbcIst, IbcRsv,
+  IbcLON, IbcEOS};
+
 #ifdef _WINDLL
 
 //------------------------------------------------------------------------------
@@ -116,6 +131,9 @@ static const char* errorMnemonic(int err) {
   case EHDL:
     msg = "EHDL:The input handle is invalid";
     break;
+  case WCFG:
+    msg = "WCFG:Configuration warning";
+    break;
   case EWIP:
     msg = "EWIP:Wait already in progress on input ud";
     break;
@@ -170,7 +188,51 @@ static int luaL_checkboolean(lua_State *L, int idx){
 }
 
 //------------------------------------------------------------------------------
-static unsigned int lua4882_ibclr(lua_State *L){
+static int lua4882_ibask(lua_State *L) {
+  // Return information about software configuration parameters.
+  // unsigned int ibask (int ud, int option, int *value)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 2) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  const char *givenOptName = luaL_checkstring(L,2);
+  int givenOptIdx = -1;	// init to impossible value
+  for (int i=0; i<NUM_OPTIONS_IBCONFIG; i++) {
+    if (strcmp(optMnemonic[i],givenOptName) == 0) {
+      // given option name is valid
+      givenOptIdx = i;
+      break;	// done here
+    }
+  }
+  if (givenOptIdx == -1) {
+    // Given option not found.
+    return luaL_error(L,"Unknown Ibask() option name.");
+  }
+  int optVal;
+  // Call C-function
+  unsigned int status = ibask(descr,optCode[givenOptIdx],&optVal);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    lua_pushnil(L);				// nothing to return
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    lua_pushinteger(L,optVal);			// Current option content
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 3;
+}
+
+//------------------------------------------------------------------------------
+static int lua4882_ibclr(lua_State *L){
   // Clear a specific device.
   // unsigned int ibclr (int ud)
 
@@ -201,20 +263,6 @@ static unsigned int lua4882_ibclr(lua_State *L){
 static int lua4882_ibconfig(lua_State *L) {
   // Change the software configuration input.
   // unsigned int ibconfig (int ud, int option, int value)
-
-  // Data taken from ni4882.h
-  const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
-    "IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL",
-    "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar",
-    "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime",
-    "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv",
-    "IbcLON", "IbcEOS"};
-  const unsigned int optCode[NUM_OPTIONS_IBCONFIG] = {
-    IbcPAD, IbcSAD, IbcTMO, IbcEOT, IbcPPC, IbcREADDR, IbcAUTOPOLL,
-    IbcSC, IbcSRE, IbcEOSrd, IbcEOSwrt, IbcEOScmp, IbcEOSchar,
-    IbcPP2, IbcTIMING, IbcDMA, IbcSendLLO, IbcSPollTime, IbcPPollTime,
-    IbcEndBitIsNormal, IbcUnAddr, IbcHSCableLength, IbcIst, IbcRsv,
-    IbcLON, IbcEOS};
 
   // Check number of arguments
   if (lua_gettop(L) != 3) {
@@ -405,6 +453,172 @@ static int lua4882_ibrd(lua_State *L) {
 }
 
 //------------------------------------------------------------------------------
+static int lua4882_ibrsp(lua_State *L){
+  // Conduct a serial poll.
+  // unsigned int ibrsp (int ud, char *spr)
+
+  const char bitMnemonic[8][5] ={"bit0","bit1","bit2","bit3","bit4","bit5",
+    "bit6","bit7"};
+  
+  // Check number of arguments
+  if (lua_gettop(L) != 1) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  // Call C-function
+  char response = 0x0;
+  unsigned int status = ibrsp(descr,&response);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    lua_pushnil(L);				// no response byte
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    // build response byte table
+    lua_newtable(L);
+    int top = lua_gettop(L);
+    // push index/value-pairs on stack
+    for (int i=0; i<8; i++) {
+      // push index
+      lua_pushstring(L,bitMnemonic[i]);
+      // push value
+      lua_pushboolean(L,(response & (1 << i)) >> i);
+      // assign table[index] = value
+      lua_settable(L,top); // also pops processed index/value from stack
+    }
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 3;
+}
+
+//------------------------------------------------------------------------------
+static int lua4882_ibtrg(lua_State *L){
+  // Trigger selected device.
+  // unsigned int ibtrg (int ud)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 1) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  // Call C-function
+  unsigned int status = ibtrg(descr);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 2;
+}
+
+//------------------------------------------------------------------------------
+static int lua4882_ibwait(lua_State *L) {
+  // Wait for GPIB events.
+  // unsigned int ibwait (int ud, int mask)
+
+  int waitMaskValue = 0x0;
+  const char maskMnemonic[15][5] = {"DCAS","DTAS","LACS","TACS","ATN","CIC",
+    "REM","LOK","CMPL","","","RQS","SRQI","END","TIMO"};
+  
+  // Check number of arguments
+  if (lua_gettop(L) != 2) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  int descr = (int)luaL_checkinteger(L,1);
+  if (lua_isstring(L,2)) {
+    // Just one single wait mask
+    const char *waitMaskName = luaL_checkstring(L,2);
+    int bitIdx = -1;	// init to impossible value
+    for (int i=0; i<15; i++) {
+      // skip unused bit positions
+      if (strcmp(maskMnemonic[i],"") == 0) continue;
+      // check current wait mask name
+      if (strcmp(maskMnemonic[i],waitMaskName) == 0) {
+	// given wait mask is valid
+	bitIdx = i;
+	break;	// done here
+      }
+    }
+    if (bitIdx == -1) {
+      // Wait mask name not found.
+      return luaL_argerror(L,2,"Unknown wait mask name.");
+    }
+    // Generate actual wait mask
+    waitMaskValue = (1 << bitIdx);
+  }
+  else if (lua_istable(L,2)) {
+    // A table of several wait masks
+    size_t len = lua_rawlen(L, 2);
+    if (len == 0) {
+      return luaL_error(L,"2nd argument is a table of length 0.");
+    }
+    // Traverse table (https://www.lua.org/manual/5.4/manual.html#lua_next)
+    lua_pushnil(L);
+    while(lua_next(L,2) != 0) {
+      // Key at index -2 (useless here)
+      int key = (int)luaL_checkinteger(L,-2);
+      // Value (the wait mask) at index -1
+      const char *waitMaskName = luaL_checkstring(L,-1);
+      // Pop useless key for next cycle
+      lua_pop(L,1);
+      // Check validity of current wait mask
+      int bitIdx = -1;	// init to impossible value
+      for (int i=0; i<15; i++) {
+	// skip unused bit positions
+	if (strcmp(maskMnemonic[i],"") == 0) continue;
+	// check current wait mask name
+	if (strcmp(maskMnemonic[i],waitMaskName) == 0) {
+	  // given wait mask is valid
+	  bitIdx = i;
+	  break;	// done here
+	}
+      }
+      // Abort if necessary
+      if (bitIdx == -1) {
+	// Wait mask name not found.
+	return luaL_argerror(L,2,"Unknown wait mask name in table.");
+      }
+      // Apply current wait mask to waitMaskValue
+      waitMaskValue |= (1 << bitIdx);
+    }
+  }
+  else {
+    return luaL_argerror(L,2,"Argument must be either a string or a table.");
+  }
+  // Call C-function
+  // printf("waitMaskValue = 0x%04x\n",waitMaskValue);
+  unsigned int status = ibwait(descr,waitMaskValue);
+  // Result and error handling
+  if (Ibsta() & ERR) {
+    // failed
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushstring(L,errorMnemonic(Iberr()));	// errmsg
+  }
+  else {
+    // OK
+    pushIbsta(L,status);			// IBSTA table
+    lua_pushnil(L);				// no errmsg
+  }
+  return 2;
+}
+
+//------------------------------------------------------------------------------
 static int lua4882_ibwrt(lua_State *L) {
   // Write data to a device from a user buffer.
   // unsigned int ibwrt (int ud, const void *wrtbuf, size_t count)
@@ -441,21 +655,29 @@ static int lua4882_ibwrt(lua_State *L) {
 
 //------------------------------------------------------------------------------
 static const struct luaL_Reg lua4882_metamethods [] = {
+  {"__call", lua4882_ibask},
   {"__call", lua4882_ibclr},
   {"__call", lua4882_ibconfig},
   {"__call", lua4882_ibdev},
   {"__call", lua4882_ibonl},
   {"__call", lua4882_ibrd},
+  {"__call", lua4882_ibrsp},
+  {"__call", lua4882_ibtrg},
+  {"__call", lua4882_ibwait},
   {"__call", lua4882_ibwrt},
   {NULL, NULL}
 };
 
 static const struct luaL_Reg lua4882_funcs [] = {
+  {"ibask",    lua4882_ibask},
   {"ibclr",    lua4882_ibclr},
   {"ibconfig", lua4882_ibconfig},
   {"ibdev",    lua4882_ibdev},
   {"ibonl",    lua4882_ibonl},
   {"ibrd",     lua4882_ibrd},
+  {"ibrsp",    lua4882_ibrsp},
+  {"ibtrg",    lua4882_ibtrg},
+  {"ibwait",   lua4882_ibwait},
   {"ibwrt",    lua4882_ibwrt},
   {NULL, NULL}
 };
