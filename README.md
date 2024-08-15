@@ -7,16 +7,16 @@ The following commands (mostly traditional NI-488.2 calls; listed in alphabetica
 
 | Function                  | Purpose                                                     |
 | ------------------------- | ----------------------------------------------------------- |
-| [`ibask`](###ibask)       | Return information about software configuration parameters. |
-| [`ibclr`](###ibclr)       | Clear a specific device.                                    |
-| [`ibconfig`](###ibconfig) | Change the software configuration input.                    |
-| [`ibdev`](###ibdev)       | Open and initialize a GPIB device handle.                   |
-| [`ibonl`](###ibonl)       | Place the device or controller interface online or offline. |
-| [`ibrd`](###ibrd)         | Read data from a device into a user buffer.                 |
-| [`ibrsp`](###ibrsp)       | Conduct a serial poll.                                      |
-| [`ibtrg`](###ibtrg)       | Trigger selected device.                                    |
-| [`ibwait`](###ibwait)     | Wait for GPIB events.                                       |
-| [`ibwrt`](###ibwrt)       | Write data to a device from a user buffer.                  |
+| [`ibask`](#ibask())       | Return information about software configuration parameters. |
+| [`ibclr`](#ibclr())       | Clear a specific device.                                    |
+| [`ibconfig`](#ibconfig()) | Change the software configuration input.                    |
+| [`ibdev`](#ibdev())       | Open and initialize a GPIB device handle.                   |
+| [`ibonl`](#ibonl())       | Place the device or controller interface online or offline. |
+| [`ibrd`](#ibrd())         | Read data from a device into a user buffer.                 |
+| [`ibrsp`](#ibrsp())       | Conduct a serial poll.                                      |
+| [`ibtrg`](#ibtrg())       | Trigger selected device.                                    |
+| [`ibwait`](#ibwait())     | Wait for GPIB events.                                       |
+| [`ibwrt`](#ibwrt())       | Write data to a device from a user buffer.                  |
 
 ## Function Reference
 
@@ -25,13 +25,17 @@ The following commands (mostly traditional NI-488.2 calls; listed in alphabetica
 Purpose: Return information about software configuration parameters. This functions is the complement to `ibconfig()`. Valid option identifiers are:
 
 ```bash
-"IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL", "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar", "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime", "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv", "IbcLON", "IbcEOS"
+"IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL",
+"IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar", "IbcPP2",
+"IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime",
+"IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv",
+"IbcLON", "IbcEOS"
 ```
 
 The detailed documentation on these options is available at:
 
-- ibconfig Board Configuration Parameter Options: https://documentation.help/NI-488.2/func77jn.html
-- ibconfig Device Configuration Parameter Options: https://documentation.help/NI-488.2/func9vcj.html
+- Controller Configuration Options: https://documentation.help/NI-488.2/func77jn.html
+- Device Configuration Options: https://documentation.help/NI-488.2/func9vcj.html
 
 ```lua
 local gpib = require "lua4882"
@@ -67,7 +71,8 @@ handle = <STATUS_TABLE>	-- see below
 errmsg = "Error code and detailed description"
 
 -- Example with no GPIO-adapter attached, therefore ERR = true and errmsg != nil
--- Individual table element access via normal Lua means, e.g. stat["RQS"] or stat.RQS
+-- Individual table element access via normal Lua means, e.g. stat["RQS"] or 
+-- stat.RQS
 for i,v in pairs(stat) do print(i,v) end
 RQS     false
 LACS    false
@@ -95,13 +100,17 @@ For the meaning of the status bits see https://documentation.help/NI-488.2/gpib2
 Purpose: Change the software configuration input. This functions is the complement to `ibask()`. Valid option identifiers are:
 
 ```bash
-"IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL", "IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar", "IbcPP2", "IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime", "IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv", "IbcLON", "IbcEOS"
+"IbcPAD", "IbcSAD", "IbcTMO", "IbcEOT", "IbcPPC", "IbcREADDR", "IbcAUTOPOLL",
+"IbcSC", "IbcSRE", "IbcEOSrd", "IbcEOSwrt", "IbcEOScmp", "IbcEOSchar", "IbcPP2",
+"IbcTIMING", "IbcDMA", "IbcSendLLO", "IbcSPollTime", "IbcPPollTime",
+"IbcEndBitIsNormal", "IbcUnAddr", "IbcHSCableLength", "IbcIst", "IbcRsv",
+"IbcLON", "IbcEOS"
 ```
 
 The detailed documentation on these options is available at:
 
-- ibconfig Board Configuration Parameter Options: https://documentation.help/NI-488.2/func77jn.html
-- ibconfig Device Configuration Parameter Options: https://documentation.help/NI-488.2/func9vcj.html
+- Controller Configuration Options: https://documentation.help/NI-488.2/func77jn.html
+- Device Configuration Options: https://documentation.help/NI-488.2/func9vcj.html
 
 ```lua
 local gpib = require "lua4882"
@@ -109,7 +118,8 @@ local gpib = require "lua4882"
 -- Example 1: Disable Autopolling on controller interface 0
 local stat, errmsg = gpib.ibconfig(0,"IbcAUTOPOLL",0)
 
--- Example 2: Change timeout on device 4 to 10s (see timeout table in ibdev() below)
+-- Example 2: Change timeout on device 4 to 10s 
+--            see timeout table in ibdev() below
 local stat, errmsg = gpib.ibconfig(4,"IbcTMO",13)
 
 -- On success:
@@ -126,12 +136,13 @@ Purpose: Open and initialize a GPIB device handle.
 
 ```lua
 local gpib = require "lua4882"
-local boardIndex = 0	-- Commonly used index of bus controller
-local primaryAddr = 1	-- Primary GPIB address of remote device
-local secondaryAddr = 0	-- No secondary GPIB address of remote device
-local timeout = 11		-- Timeout 1 s (see table below)
-local eoiMode = 1		-- Asserts GPIB End-or-Identify (EOI) line at end of transfer
-local eosMode = 0		-- No end-of-string character
+local boardIndex = 0    -- Commonly used index of bus controller
+local primaryAddr = 1   -- Primary GPIB address of remote device
+local secondaryAddr = 0 -- No secondary GPIB address of remote device
+local timeout = 11      -- Timeout 1 s (see table below)
+local eoiMode = 1       -- Asserts GPIB End-or-Identify (EOI) line at end of
+                        -- transfer
+local eosMode = 0       -- No end-of-string character
 
 -- Returns device handle and error message
 local handle, errmsg = gpib.ibdev(boardIndex, primaryAddr, secondaryAddr, timeout, eoiMode, eosMode)
@@ -283,7 +294,8 @@ errmsg = "Error code and detailed description"
 Purpose: Wait for GPIB events. Valid wait mask identifiers are:
 
 ```bash
-"DCAS", "DTAS", "LACS", "TACS", "ATN", "CIC", "REM", "LOK", "CMPL", "RQS", "SRQI", "END", "TIMO"
+"DCAS", "DTAS", "LACS", "TACS", "ATN", "CIC", "REM", "LOK", "CMPL", "RQS",
+"SRQI", "END", "TIMO"
 ```
 
 For GPIB devices the only valid wait masks are `TIMO`, `END`, `RQS`, and `CMPL`. GPIB controllers accept all wait masks except for `RQS`. Detailed wait mask information is available at https://documentation.help/NI-488.2/func3kfo.html.
