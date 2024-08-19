@@ -436,9 +436,9 @@ static int lua4882_ibrd(lua_State *L) {
 	  // ...as ASCII data table element
 	  lua_pushlstring(L,&(rdBuf[i]),1);
 	}
+	// assign table[index] = value
+	lua_settable(L,top); // also pops processed index/value from stack
       }
-      // assign table[index] = value
-      lua_settable(L,top); // also pops processed index/value from stack
     }
     else {
       // output data as string
