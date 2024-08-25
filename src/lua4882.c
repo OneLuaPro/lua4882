@@ -50,7 +50,7 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define CHARTABLE   1
 #define BINTABLE    2
 #define NUM_OPTIONS_IBCONFIG	26
-#define LUA4882_VERSION "lua4882 v0.1"
+#define LUA4882_VERSION "lua4882 v1.0"
 
 // Ibconfig() Ibask() options, taken from ni4882.h
 const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
