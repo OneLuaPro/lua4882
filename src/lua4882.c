@@ -429,8 +429,9 @@ static int lua4882_ibrd(lua_State *L) {
 	lua_pushinteger(L,i+1); 		// Lua 1-based indexing
 	// push value...
 	if (output == BINTABLE) {
-	  // ...as binary data table element
-	  lua_pushinteger(L,(lua_Integer)rdBuf[i]);
+	  // ...as binary data table element, make sure that just the byte
+	  // is pushed by masking with 0xff.
+	  lua_pushinteger(L,((lua_Integer)rdBuf[i]) & 0xff);
 	}
 	else {
 	  // ...as ASCII data table element
