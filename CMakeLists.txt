@@ -39,7 +39,7 @@
 
 # ------------------------------------------------------------------------------
 # General definitions
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 
 # ------------------------------------------------------------------------------
 # find liblua installation and version info
