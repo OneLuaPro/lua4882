@@ -28,8 +28,15 @@ target_include_directories(lua4882 PRIVATE ${LIBLUA_INCLUDEDIR})
 if(WIN32 AND NOT MinGW)
   target_include_directories(lua4882 PRIVATE ${NI4882_INCDIR})
   target_compile_options(lua4882 PRIVATE /D_WINDLL /D_WIN32 /D_CRT_SECURE_NO_WARNINGS)
-  target_link_options(lua4882 PRIVATE /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
-    /LIBPATH:${NI4882_LIBDIR} ni4882scrt.obj)
+  if(${CMAKE_SYSTEM_VERSION} EQUAL 6.1.7601)
+    # Windows 7 SP1
+    target_link_options(lua4882 PRIVATE /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
+      /LIBPATH:${NI4882_LIBDIR} ni4882.obj)
+  else()
+    # Windows 10
+    target_link_options(lua4882 PRIVATE /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
+      /LIBPATH:${NI4882_LIBDIR} ni4882scrt.obj)
+  endif()
 else()
   message(FATAL_ERROR "Not yet fully implemented.")
 endif()
