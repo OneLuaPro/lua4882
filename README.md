@@ -5,18 +5,19 @@ Access to National Instrument's NI-488.2 (GPIB) driver for [OneLuaPro](https://g
 
 The following commands (mostly traditional NI-488.2 calls; listed in alphabetical order) are implemented.
 
-| Function                  | Purpose                                                     |
-| ------------------------- | ----------------------------------------------------------- |
-| [`ibask`](#ibask())       | Return information about software configuration parameters. |
-| [`ibclr`](#ibclr())       | Clear a specific device.                                    |
-| [`ibconfig`](#ibconfig()) | Change the software configuration input.                    |
-| [`ibdev`](#ibdev())       | Open and initialize a GPIB device handle.                   |
-| [`ibonl`](#ibonl())       | Place the device or controller interface online or offline. |
-| [`ibrd`](#ibrd())         | Read data from a device into a user buffer.                 |
-| [`ibrsp`](#ibrsp())       | Conduct a serial poll.                                      |
-| [`ibtrg`](#ibtrg())       | Trigger selected device.                                    |
-| [`ibwait`](#ibwait())     | Wait for GPIB events.                                       |
-| [`ibwrt`](#ibwrt())       | Write data to a device from a user buffer.                  |
+| Function                  | Purpose                                                      |
+| ------------------------- | ------------------------------------------------------------ |
+| [`ibask`](#ibask())       | Return information about software configuration parameters.  |
+| [`ibclr`](#ibclr())       | Clear a specific device.                                     |
+| [`ibconfig`](#ibconfig()) | Change the software configuration input.                     |
+| [`ibdev`](#ibdev())       | Open and initialize a GPIB device handle.                    |
+| [`ibfind`](#ibfind())     | Open and initialize a board or a user-configured device  descriptor. |
+| [`ibonl`](#ibonl())       | Place the device or controller interface online or offline.  |
+| [`ibrd`](#ibrd())         | Read data from a device into a user buffer.                  |
+| [`ibrsp`](#ibrsp())       | Conduct a serial poll.                                       |
+| [`ibtrg`](#ibtrg())       | Trigger selected device.                                     |
+| [`ibwait`](#ibwait())     | Wait for GPIB events.                                        |
+| [`ibwrt`](#ibwrt())       | Write data to a device from a user buffer.                   |
 
 Access these functions by requiring the Lua module `lua4882`:
 
@@ -135,7 +136,7 @@ errmsg = "Error code and detailed description"
 
 ### ibdev()
 
-Purpose: Open and initialize a GPIB device handle.
+Purpose: Open and initialize a GPIB device handle. This command works only on board-level.
 
 ```lua
 local boardIndex = 0    -- Commonly used index of bus controller
@@ -172,6 +173,22 @@ The following timeout index values may be used.
 | Index   | 9      | 10     | 11   | 12   | 13   | 14   | 15    | 16    | 17     |
 | ------- | ------ | ------ | ---- | ---- | ---- | ---- | ----- | ----- | ------ |
 | Timeout | 100 ms | 300 ms | 1 s  | 3 s  | 10 s | 30 s | 100 s | 300 s | 1000 s |
+
+### ibfind()
+
+Purpose: Open and initialize a board or a user-configured device descriptor. This command works on both board-level and device-level.
+
+```lua
+-- Returns device handle and error message
+local handle, errmsg = gpib.ibfind("GPIB0")
+
+-- On success:
+handle = <DEVICE_HANDLE>
+errmsg = nil	-- no error message
+-- On failure:
+handle = nil	-- no device handle
+errmsg = "Error code and detailed description"
+```
 
 ### ibonl()
 

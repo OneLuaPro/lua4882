@@ -50,7 +50,7 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define CHARTABLE   1
 #define BINTABLE    2
 #define NUM_OPTIONS_IBCONFIG	26
-#define LUA4882_VERSION "lua4882 v1.0"
+#define LUA4882_VERSION "lua4882 v1.1"
 
 // Ibconfig() Ibask() options, taken from ni4882.h
 const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
@@ -320,6 +320,34 @@ static int lua4882_ibdev(lua_State *L) {
   int eos   = (int)luaL_checkinteger(L,6);
   // Call C-function
   int handle = ibdev(descr, pad, sad, tmo, eot, eos);
+  // Error handling
+  if (Ibsta() & ERR) {
+    // failed
+    lua_pushnil(L);		// no handle or descriptor
+    lua_pushstring(L,errorMnemonic(Iberr())); // errmsg
+  }
+  else {
+    // OK
+    lua_pushinteger(L,handle);	// device descriptor
+    lua_pushnil(L);		// no errmsg
+  }
+  return 2;
+}
+
+//------------------------------------------------------------------------------
+static int lua4882_ibfind(lua_State *L) {
+  // Open and initialize a board or a user-configured device descriptor.
+  // int ibfind (const char *udname)
+
+  // Check number of arguments
+  if (lua_gettop(L) != 1) {
+    // bailing out
+    return luaL_error(L,"Wrong number of arguments.");
+  }
+  // Check arguments
+  const char *udName = luaL_checkstring(L,1);
+  // Call C-function
+  int handle = ibfind(udName);
   // Error handling
   if (Ibsta() & ERR) {
     // failed
@@ -660,6 +688,7 @@ static const struct luaL_Reg lua4882_metamethods [] = {
   {"__call", lua4882_ibclr},
   {"__call", lua4882_ibconfig},
   {"__call", lua4882_ibdev},
+  {"__call", lua4882_ibfind},
   {"__call", lua4882_ibonl},
   {"__call", lua4882_ibrd},
   {"__call", lua4882_ibrsp},
@@ -674,6 +703,7 @@ static const struct luaL_Reg lua4882_funcs [] = {
   {"ibclr",    lua4882_ibclr},
   {"ibconfig", lua4882_ibconfig},
   {"ibdev",    lua4882_ibdev},
+  {"ibfind",   lua4882_ibfind},
   {"ibonl",    lua4882_ibonl},
   {"ibrd",     lua4882_ibrd},
   {"ibrsp",    lua4882_ibrsp},
