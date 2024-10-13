@@ -227,7 +227,6 @@ data = nil
 handle = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = "Error code and detailed description"
 
-
 -- Example 2: read 12 bytes from device devHandle as table of ASCII-characters
 --            devData = "ABc" : data[1]="A" data[2]="B" data[3]="c"
 local data, stat, errmsg = gpib.ibrd(devHandle,12,"charTable")
@@ -239,7 +238,6 @@ errmsg = nil	-- no error message
 data = nil
 handle = <STATUS_TABLE>	-- see description for ibclr()
 errmsg = "Error code and detailed description"
-
 
 -- Example 3: read 8 bytes from device devHandle as table of numbers (raw data)
 --            devData = "ABc" : data[1]=0x41 data[2]=0x42 data[3]=0x63
@@ -309,6 +307,8 @@ Purpose: Wait for GPIB events on board-level or device-level. Valid wait mask id
 "SRQI", "END", "TIMO"
 ```
 
+`ibwait()` accepts wait mask identifiers given as a single string value, as a table of string values, or as an integer value. The latter is useful for providing no wait mask at all by specifying `0` as argument. In this case `ibwait()` returns immediately with the updated `IBSTA` status info.
+
 For GPIB devices the only valid wait masks are `TIMO`, `END`, `RQS`, and `CMPL`. GPIB controllers accept all wait masks except for `RQS`. Detailed wait mask information is available at https://documentation.help/NI-488.2/func3kfo.html.
 
 ```lua
@@ -318,6 +318,9 @@ local stat, errmsg = gpib.ibwait(devHandle,"RQS")
 -- Example 2: Wait for device devHandle requesting service or for timeout
 -- Notice that more than one wait mask may be handed over when put into a Lua table.
 local stat, errmsg = gpib.ibwait(devHandle,{"RQS","TIMO"})
+
+-- Example 3: Returns immediately with the updated IBSTA status table.
+local stat, errmsg = gpib.ibwait(devHandle,0)
 
 -- On success:
 stat = <STATUS_TABLE>	-- see description for ibclr()
