@@ -50,7 +50,7 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define CHARTABLE   1
 #define BINTABLE    2
 #define NUM_OPTIONS_IBCONFIG	26
-#define LUA4882_VERSION "lua4882 v1.2"
+#define LUA4882_VERSION "lua4882 v1.2.1"
 
 // Ibconfig() Ibask() options, taken from ni4882.h
 const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
@@ -570,7 +570,12 @@ static int lua4882_ibwait(lua_State *L) {
   }
   // Check arguments
   int descr = (int)luaL_checkinteger(L,1);
-  if (lua_isstring(L,2)) {
+  if (lua_isinteger(L,2)) {
+    // General purpose wait mask given as integer value
+    // Usefull for calls to ibwai(descr,0) which does nothing more than updating IBSTA
+    waitMaskValue = (int)luaL_checkinteger(L,2);
+  }
+  else if (lua_isstring(L,2)) {
     // Just one single wait mask given as string identifier
     const char *waitMaskName = luaL_checkstring(L,2);
     int bitIdx = -1;	// init to impossible value
@@ -590,11 +595,6 @@ static int lua4882_ibwait(lua_State *L) {
     }
     // Generate actual wait mask
     waitMaskValue = (1 << bitIdx);
-  }
-  else if (lua_isinteger(L,2)) {
-    // General purpose wait mask given as integer value
-    // Usefull for calls to ibwai(descr,0) which does nothing more than updating IBSTA
-    waitMaskValue = (int)luaL_checkinteger(L,2);
   }
   else if (lua_istable(L,2)) {
     // A table of several wait masks given as string identifiers
