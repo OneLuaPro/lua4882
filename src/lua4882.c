@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 MIT License
 
-lua4882 - Copyright (c) 2024 Kritzel Kratzel.
+lua4882 - Copyright (c) 2024-2025 Kritzel Kratzel.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in 
@@ -50,7 +50,7 @@ https://www.ni.com/en/about-ni/legal/software-license-agreement.html
 #define CHARTABLE   1
 #define BINTABLE    2
 #define NUM_OPTIONS_IBCONFIG	26
-#define LUA4882_VERSION "lua4882 v1.2.1"
+#define LUA4882_VERSION "lua4882 1.2.1"
 
 // Ibconfig() Ibask() options, taken from ni4882.h
 const char optMnemonic[NUM_OPTIONS_IBCONFIG][18] = {
