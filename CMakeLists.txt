@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2024 Kritzel Kratzel.
+# Copyright (c) 2024-2026 The OneLuaPro project authors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in 
@@ -125,10 +125,10 @@ endif()
 # Setting include and lib directories according to generator platfrom
 set(NI4882_INCDIR
   ${NI4882_BASEDIR}/include CACHE PATH "NI-488.2 ANSI C include directory")
-if (CMAKE_GENERATOR_PLATFORM STREQUAL x64)
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)	# 64 bit
   set(NI4882_LIBDIR
     ${NI4882_BASEDIR}/lib64/msvc CACHE PATH "NI-488.2 ANSI C lib64 directory")
-elseif (CMAKE_GENERATOR_PLATFORM STREQUAL Win32)
+elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)	# 32 bit
   set(NI4882_LIBDIR
     ${NI4882_BASEDIR}/lib32/msvc CACHE PATH "NI-488.2 ANSI C lib32 directory")
 else()

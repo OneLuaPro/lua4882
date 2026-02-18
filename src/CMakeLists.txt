@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2024 Kritzel Kratzel.
+# Copyright (c) 2024-2026 The OneLuaPro project authors.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in 
@@ -28,14 +28,13 @@ target_include_directories(lua4882 PRIVATE ${LIBLUA_INCLUDEDIR})
 if(WIN32 AND NOT MinGW)
   target_include_directories(lua4882 PRIVATE ${NI4882_INCDIR})
   target_compile_options(lua4882 PRIVATE /D_WINDLL /D_WIN32 /D_CRT_SECURE_NO_WARNINGS)
+  target_link_directories(lua4882 PRIVATE ${LIBLUA_LIBDIR})
   if(${CMAKE_SYSTEM_VERSION} EQUAL 6.1.7601)
     # Windows 7 SP1
-    target_link_options(lua4882 PRIVATE /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
-      /LIBPATH:${NI4882_LIBDIR} ni4882.obj)
+    target_link_libraries(lua4882 PRIVATE liblua.lib ${NI4882_LIBDIR}/ni4882.obj)
   else()
     # Windows 10
-    target_link_options(lua4882 PRIVATE /LIBPATH:${LIBLUA_LIBDIR} liblua.lib
-      /LIBPATH:${NI4882_LIBDIR} ni4882scrt.obj)
+    target_link_libraries(lua4882 PRIVATE liblua.lib ${NI4882_LIBDIR}/ni4882scrt.obj)
   endif()
 else()
   message(FATAL_ERROR "Not yet fully implemented.")

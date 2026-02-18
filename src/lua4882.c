@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 MIT License
 
-lua4882 - Copyright (c) 2024-2025 Kritzel Kratzel.
+lua4882 - Copyright (c) 2024-2026 The OneLuaPro project authors.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in 
@@ -407,7 +407,7 @@ static int lua4882_ibrd(lua_State *L) {
   // Check arguments
   int descr, output;
   size_t count;
-  const char *txtOption = '\0';
+  const char *txtOption = NULL;
   if (lua_gettop(L) == 2) {
     // Two arguments, output as normal ASCII-string.
     descr = (int)luaL_checkinteger(L,1);
